@@ -8,7 +8,7 @@ description: Como ler e escrever conhecimento no cofre (funil de leitura, estado
 1. `00-Mapa/Home.md`: o que é o projeto e em que estado está.
 2. O teu brief em `01-Objetivos/`, se existir: ordem de leitura, skills e âmbito.
 3. A nota de domínio relevante em `03-Conhecimento/1-Dominios/`. O bloco AUTO lista as notas do domínio, cada uma com o `resumo`.
-4. Só as notas de `2-Conceitos/` cujo resumo interessa ao passo atual. Depois `3-Detalhe/`. No fim, `05-Fontes/` ou o código.
+4. Só as notas de `2-Conceitos/` cujo resumo interessa ao passo atual. Depois `3-Detalhe/`. No fim, `05-Fontes/` (começa por `Indice-de-fontes.md`) ou o código.
 5. Antes de afirmar algo, vê o `estado`:
    - `verificado`: serve de base.
    - `proposto`: é hipótese, e dizes que é.

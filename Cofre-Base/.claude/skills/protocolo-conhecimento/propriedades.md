@@ -10,13 +10,17 @@ Escreve os valores com aspas quando contêm `[[ ]]` (YAML). Datas em `AAAA-MM-DD
 | `estado` (objetivo) | `aberto`, `em-curso`, `concluido` | objetivo |
 | `estado` (handoff) | `concluido`, `parcial`, `bloqueado` | handoff |
 | `confianca` | `baixa`, `media`, `alta` | recomendado |
-| `resumo` | uma linha, até 200 caracteres | sempre (é o que os agentes leem primeiro) |
+| `resumo` | uma linha, até 200 caracteres | sempre (é o que os agentes leem primeiro; nas fontes alimenta o `Indice-de-fontes`) |
 | `fontes` | lista de caminhos ou `"[[nota]]"` | conceito, detalhe |
 | `verificado_por` | `leitura-codigo`, `teste`, `build`, `fonte-primaria`, `utilizador`, `verificador` | obrigatório se `estado: verificado` |
 | `substituido_por` | `"[[nota]]"` | obsoleto |
 | `atualizado` | data | sempre |
 | `confirmado` | `sim`, `nao` | fontes do utilizador |
 | `publicar` | `sim`, `nao`, `parcial` | fontes do utilizador |
+
+Só o utilizador altera `confirmado` e `publicar`.
+
+Fontes: cada uma é a pasta `05-Fontes/<assunto>/<fonte>/` com a nota `<fonte>.md`. Os anexos ficam em `imagens/`, `videos/`, `audio/` ou `documentos/` e têm uma linha na tabela `## Anexos` (ficheiro, descrição, `Publicar` `sim` ou `nao`).
 
 Handoff: `objetivo` (por exemplo, `OBJ-001`) e `estado` obrigatórios. Objetivo: `id` e `persona` obrigatórios.
 

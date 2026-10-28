@@ -1,8 +1,10 @@
 {
-  "userIgnoreFilters": ["07-Projeto/"],
+  "userIgnoreFilters": [
+    "07-Projeto/"
+  ],
   "newFileLocation": "folder",
   "newFileFolderPath": "03-Conhecimento/2-Conceitos",
-  "attachmentFolderPath": "05-Fontes/anexos",
+  "attachmentFolderPath": "./imagens",
   "propertiesInDocument": "visible",
   "alwaysUpdateLinks": true
 }

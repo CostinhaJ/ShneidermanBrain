@@ -7,7 +7,8 @@
 //   node .claude/skills/regenerar-indices/regen.mjs --raiz <pasta>
 //
 // Escreve apenas: 00-Mapa/Conhecido-vs-por-saber.md, 00-Mapa/Evolucao.md,
-// 00-Mapa/Skills-e-Personas.md e o bloco AUTO dentro de cada nota de 1-Dominios/.
+// 00-Mapa/Skills-e-Personas.md, 05-Fontes/Indice-de-fontes.md e o bloco AUTO
+// dentro de cada nota de 1-Dominios/.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -88,10 +89,95 @@ for (const z of ZONAS) {
 }
 const nomes = new Set(notas.map((n) => n.nome.toLowerCase()));
 // Índices que esta execução vai criar: não contam como links partidos na primeira vez.
-if (!soVerificar) for (const g of ['Conhecido-vs-por-saber', 'Evolucao', 'Skills-e-Personas']) nomes.add(g.toLowerCase());
+if (!soVerificar) for (const g of ['Conhecido-vs-por-saber', 'Evolucao', 'Skills-e-Personas', 'Indice-de-fontes']) nomes.add(g.toLowerCase());
 const porNome = new Map(notas.map((n) => [n.nome.toLowerCase(), n]));
 const eModelo = (n) => n.rel.startsWith('99-Sistema/');
 const eGuia = (n) => n.nome === 'CLAUDE.md'.replace('.md', '');
+
+// ---- fontes: 05-Fontes/<assunto>/<fonte>/<fonte>.md + anexos em subpastas por tipo ----
+const TIPOS_ANEXO = {
+  imagens: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'avif', 'heic'],
+  videos: ['mp4', 'mov', 'webm', 'mkv', 'avi', 'm4v'],
+  audio: ['mp3', 'wav', 'm4a', 'ogg', 'flac'],
+  documentos: null, // qualquer extensão
+};
+const PUBLICAR_FONTE = ['sim', 'nao', 'parcial'];
+const PUBLICAR_ANEXO = ['sim', 'nao'];
+const FICHEIROS_RAIZ_FONTES = ['CLAUDE.md', 'Indice-de-fontes.md'];
+const fontes = [];
+const subdirs = (d) => (fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }).filter((e) => e.isDirectory() && !/^[._]/.test(e.name)).map((e) => e.name).sort() : []);
+const ficheirosEm = (d) => (fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }).filter((e) => e.isFile() && !e.name.startsWith('.')).map((e) => e.name) : []);
+function* todosOsFicheiros(dir, base = dir) {
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (e.name.startsWith('.')) continue;
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) yield* todosOsFicheiros(p, base);
+    else if (e.isFile()) yield posix(path.relative(base, p));
+  }
+}
+function lerTabelaAnexos(corpo) {
+  const linhas = corpo.split(/\r?\n/);
+  const i = linhas.findIndex((l) => /^##\s+Anexos\s*$/i.test(l.trim()));
+  if (i < 0) return null;
+  const linhasTabela = [];
+  for (const l of linhas.slice(i + 1)) {
+    if (!l.trim()) { if (linhasTabela.length) break; continue; }
+    if (!l.trim().startsWith('|')) break;
+    linhasTabela.push(l.trim());
+  }
+  return linhasTabela.slice(2).map((l) => {
+    const c = l.replace(/^\||\|$/g, '').split(/(?<!\\)\|/).map((s) => s.trim());
+    const ref = (c[0] || '').replace(/`/g, '').replace(/^!?\[\[|\]\]$/g, '').split('\\|')[0].trim();
+    return { ref, descricao: c[1] || '', publicar: (c[2] || '').toLowerCase() };
+  }).filter((a) => a.ref);
+}
+const raizFontes = path.join(raiz, '05-Fontes');
+for (const f of ficheirosEm(raizFontes)) if (!FICHEIROS_RAIZ_FONTES.includes(f) && !f.startsWith('_')) avisos.push(`05-Fontes/${f}: fora da estrutura (deve estar em 05-Fontes/<assunto>/<fonte>/)`);
+for (const assunto of subdirs(raizFontes)) {
+  const dirAssunto = path.join(raizFontes, assunto);
+  for (const f of ficheirosEm(dirAssunto)) if (!f.startsWith('_')) avisos.push(`05-Fontes/${assunto}/${f}: fora da estrutura (cada fonte é uma pasta com <fonte>/<fonte>.md)`);
+  for (const nome of subdirs(dirAssunto)) {
+    const dirFonte = path.join(dirAssunto, nome);
+    const relDir = `05-Fontes/${assunto}/${nome}`;
+    const nota = notas.find((n) => n.rel === `${relDir}/${nome}.md`);
+    const fonte = { assunto, nome, relDir, nota, fm: nota?.fm || {}, anexos: [], semDescricao: [] };
+    fontes.push(fonte);
+    if (!nota) { erros.push(`${relDir}: fonte sem nota principal (esperado ${nome}.md, com o mesmo nome da pasta)`); }
+    else {
+      exige(nota, ['tipo', 'confirmado', 'publicar', 'atualizado']);
+      if (nota.fm?.tipo && nota.fm.tipo !== 'fonte') erros.push(`${nota.rel}: tipo "${nota.fm.tipo}" numa nota principal de fonte (esperado "fonte")`);
+      if (nota.fm?.confirmado && !['sim', 'nao'].includes(nota.fm.confirmado)) erros.push(`${nota.rel}: confirmado inválido "${nota.fm.confirmado}" (sim ou nao)`);
+      if (nota.fm?.publicar && !PUBLICAR_FONTE.includes(nota.fm.publicar)) erros.push(`${nota.rel}: publicar inválido "${nota.fm.publicar}" (sim, nao ou parcial)`);
+      if (nota.fm && !nota.fm.resumo) avisos.push(`${nota.rel}: sem "resumo" (o índice de fontes fica sem descrição)`);
+    }
+    const ficheiros = [...todosOsFicheiros(dirFonte)].filter((r) => r !== `${nome}.md`);
+    const tabela = nota ? lerTabelaAnexos(nota.corpo) : null;
+    if (nota && ficheiros.length && tabela === null) erros.push(`${nota.rel}: tem anexos mas não tem a secção "## Anexos"`);
+    const usados = new Set();
+    for (const a of tabela || []) {
+      let alvo = ficheiros.find((r) => r === a.ref);
+      if (!alvo) {
+        const iguais = ficheiros.filter((r) => r.split('/').pop() === a.ref.split('/').pop());
+        if (iguais.length === 1) alvo = iguais[0];
+        else if (iguais.length > 1) { erros.push(`${nota.rel}: anexo "${a.ref}" é ambíguo (${iguais.join(', ')}); use o caminho relativo`); continue; }
+      }
+      if (!alvo) { erros.push(`${nota.rel}: anexo listado não existe: ${a.ref}`); continue; }
+      usados.add(alvo);
+      if (!PUBLICAR_ANEXO.includes(a.publicar)) erros.push(`${nota.rel}: anexo ${alvo} com Publicar inválido "${a.publicar}" (sim ou nao)`);
+      if (a.publicar === 'sim' && fonte.fm.publicar === 'nao') erros.push(`${nota.rel}: anexo ${alvo} com Publicar sim numa fonte com publicar: nao`);
+      if (!a.descricao) avisos.push(`${nota.rel}: anexo ${alvo} sem descrição`);
+      fonte.anexos.push({ rel: alvo, publicar: a.publicar, descricao: a.descricao });
+    }
+    for (const r of ficheiros) {
+      const [pasta, ...resto] = r.split('/');
+      const ext = r.split('.').pop().toLowerCase();
+      if (!resto.length) avisos.push(`${relDir}/${r}: anexo fora de uma subpasta por tipo (${Object.keys(TIPOS_ANEXO).join(', ')})`);
+      else if (!(pasta in TIPOS_ANEXO)) avisos.push(`${relDir}/${r}: subpasta "${pasta}" desconhecida (${Object.keys(TIPOS_ANEXO).join(', ')})`);
+      else if (TIPOS_ANEXO[pasta] && !TIPOS_ANEXO[pasta].includes(ext)) avisos.push(`${relDir}/${r}: extensão .${ext} não pertence a ${pasta}/`);
+      if (!usados.has(r)) { fonte.semDescricao.push(r); avisos.push(`${relDir}/${r}: anexo sem linha na tabela "## Anexos" (ambíguo: não usar nem publicar)`); }
+    }
+  }
+}
 
 // ---- validação ----
 function exige(n, chaves) {
@@ -126,7 +212,7 @@ for (const n of notas) {
   const textoLinks = semCodigo + '\n' + (n.fm ? Object.values(n.fm).flat().join('\n') : '');
   for (const m of textoLinks.matchAll(/\[\[([^\]]+)\]\]/g)) {
     const a = alvoLink(m[0]);
-    if (a && !nomes.has(a.toLowerCase()) && !/\.(canvas|png|jpg|svg|pdf)$/i.test(a)) {
+    if (a && !nomes.has(a.toLowerCase()) && !/\.(?!md$)[a-z0-9]{1,8}$/i.test(a)) {
       if (gerado) { avisos.push(`${n.rel}: índice desatualizado (link [[${m[1]}]]); corra regenerar-indices sem --verificar`); break; }
       erros.push(`${n.rel}: link partido [[${m[1]}]]`);
     }
@@ -190,7 +276,25 @@ if (!soVerificar) {
   md += `## Rascunhos de skills (\`99-Sistema/Skills-rascunho/\`)\n\n${tabela(listar('99-Sistema/Skills-rascunho', 'SKILL.md'))}`;
   escrever('00-Mapa/Skills-e-Personas.md', md);
 
-  // 4) Bloco AUTO em cada nota de domínio
+  // 4) Índice de fontes
+  md = `---\ntipo: indice\ngerado: true\natualizado: ${hoje}\n---\n# Índice de fontes\n\n> Gerado por \`regenerar-indices\`. Não editar. Estrutura: \`05-Fontes/<assunto>/<fonte>/<fonte>.md\`, anexos em \`imagens/\`, \`videos/\`, \`audio/\`, \`documentos/\`.\n\n`;
+  const assuntos = [...new Set(fontes.map((f) => f.assunto))];
+  if (!assuntos.length) md += '_Nenhuma fonte ainda._\n\n';
+  for (const a of assuntos) {
+    const l = fontes.filter((f) => f.assunto === a);
+    md += `## ${a} (${l.length})\n\n| Fonte | Confirmado | Publicar | Anexos | Resumo |\n|---|---|---|---|---|\n`;
+    md += l.map((f) => {
+      const total = f.anexos.length + f.semDescricao.length;
+      const anexos = total ? `${total}${f.semDescricao.length ? ` (${f.semDescricao.length} sem descrição)` : ''}` : '0';
+      return `| ${f.nota ? `[[${f.nome}]]` : `${celula(f.nome)} (sem nota)`} | ${celula(f.fm.confirmado)} | ${celula(f.fm.publicar)} | ${anexos} | ${celula(f.fm.resumo)} |`;
+    }).join('\n') + '\n\n';
+  }
+  const porRever = fontes.flatMap((f) => f.semDescricao.map((r) => `${f.relDir}/${r}`));
+  md += `## Anexos sem descrição (${porRever.length})\n\nNão usar nem publicar até terem uma linha na tabela "Anexos" da fonte.\n\n`;
+  md += porRever.length ? porRever.map((r) => `- \`${r}\``).join('\n') + '\n' : '_Nenhum._\n';
+  escrever('05-Fontes/Indice-de-fontes.md', md);
+
+  // 5) Bloco AUTO em cada nota de domínio
   for (const d of conhecimento.filter((n) => n.fm.tipo === 'dominio')) {
     const filhos = conhecimento.filter((n) => n.fm.tipo !== 'dominio' && nomeDominio(n) === d.nome);
     let bloco = '<!-- AUTO:INICIO (gerado, não editar) -->\n';
