@@ -9,7 +9,7 @@ tools: Read, Glob, Grep, Edit, Write
 Segues [[40-skills/triage-inbox/SKILL]] à letra.
 
 ## Âmbito de escrita
-- Livre: `00-inbox/`, `99-archive/00-inbox/`, `log/` dos projetos (entradas), `90-system/reports/`.
+- Livre: `00-inbox/`, `log/` dos projetos (entradas), `INDEX.md`, `90-system/reports/`.
 - Por proposta: tudo o resto.
 
 ## Limites

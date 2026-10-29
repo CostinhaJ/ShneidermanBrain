@@ -1,17 +1,24 @@
 # Vault de contexto para agentes
 
-Estrutura para um vault Obsidian usado como armazém de contexto e skills de agentes, com desenvolvimento gerido por orquestração.
+Vault Obsidian usado como armazém de contexto e skills de agentes, desenvolvido por orquestração.
 
-## Arranque rápido
-1. Copia esta pasta para o teu Obsidian (ou abre-a como vault novo).
-2. `git init` na raiz e faz o primeiro commit.
-3. Liga os agentes ao Claude Code: `mkdir -p .claude && ln -s ../50-agents .claude/agents`
-4. Corre o Claude Code na raiz do vault e pede: "Usa o agente orchestrator para criar o projeto <nome>" (ou "faz a triagem do inbox").
-5. Revê `90-system/review/` regularmente: nada de estável muda sem a tua aprovação.
+## Requisitos
+`git`, `python3` e Claude Code.
 
-## Ideias para a fase seguinte
-- Agendar o orquestrador (diário) com uma tarefa agendada ou cron.
-- Adicionar um agente por área/projeto quando o volume justificar.
-- Hooks do Claude Code para impor permissões de escrita por pasta, em vez de depender só das instruções.
+## Arranque
+1. Copia esta pasta para o Obsidian (ou abre-a como vault novo).
+2. `git init` e primeiro commit. Sem git, o hook de fim de sessão não faz commit.
+3. `mkdir -p .claude && ln -s ../50-agents .claude/agents` (a pasta `.claude/` já existe com hooks e regras).
+4. Corre o Claude Code na raiz do vault e confirma com `/memory` que o `CLAUDE.md` e as regras carregaram.
+5. Pede: "Usa o agente orchestrator para criar o projeto <nome>".
+6. Aprova propostas em `90-system/review/` mudando `status: pending` para `approved`.
 
-Regras completas em `CLAUDE.md`; mapa em `INDEX.md`.
+## Como é imposto (não só pedido)
+| Ficheiro | O que faz |
+|---|---|
+| `.claude/settings.json` | Nega `rm`, `git push`, `git reset --hard`, `git clean`; regista os hooks |
+| `.claude/hooks/guard-write.py` | Antes de Edit/Write: bloqueia escritas fora das zonas livres sem proposta aprovada; impede agentes de escrever `status: approved` |
+| `.claude/hooks/housekeeping.sh` | No fim da sessão: move ficheiros `status: archived` para `99-archive/` e faz commit |
+| `.claude/rules/*.md` | Regras que só carregam ao trabalhar nas pastas respetivas |
+
+Os agentes não têm `Bash`, para que o shell não contorne os hooks. As regras em `CLAUDE.md` são contexto; os hooks são o que garante o cumprimento.

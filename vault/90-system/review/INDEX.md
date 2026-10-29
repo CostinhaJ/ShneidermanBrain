@@ -24,8 +24,8 @@ Corpo: motivo da alteração + o diff ou o texto completo proposto.
 
 ## Fluxo
 1. O agente cria a proposta com `status: pending`.
-2. Tu revês: mudas para `approved` ou `rejected`.
-3. O orquestrador aplica as aprovadas, regista no `log/` e arquiva a proposta em `99-archive/`.
+2. Tu revês no Obsidian: mudas para `approved` ou `rejected`. O hook impede os agentes de escreverem `status: approved`.
+3. O orquestrador aplica as aprovadas (o hook só deixa alterar o ficheiro `target` enquanto a proposta está `approved`), regista no `log/` e define `status: archived` na proposta. As rejeitadas também passam a `archived`.
 
 ## Pendentes
 Nenhuma.

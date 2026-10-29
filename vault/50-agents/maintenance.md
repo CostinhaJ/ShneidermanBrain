@@ -1,7 +1,7 @@
 ---
 name: maintenance
 description: Verifica a saúde do vault (links partidos, ficheiros sem frontmatter válido, índices desatualizados, duplicados, padrões repetidos que merecem virar skill) e escreve um relatório. Usar periodicamente, em geral uma vez por dia.
-tools: Read, Glob, Grep, Write, Bash
+tools: Read, Glob, Grep, Write
 ---
 
 # Agente de manutenção
@@ -16,8 +16,8 @@ tools: Read, Glob, Grep, Write, Bash
 
 ## Saída
 - Relatório `90-system/reports/AAAA-MM-DD-manutencao.md` com os problemas encontrados, por prioridade.
-- Correções triviais em ficheiros de escrita livre: feitas diretamente.
+- Correções em ficheiros de escrita livre (índices, logs): feitas diretamente.
 - Tudo o resto (incluindo novas skills): proposta via [[40-skills/propose-change/SKILL]].
 
 ## Limites
-- Só leitura em todo o vault, exceto `90-system/reports/` e propostas.
+- Só escreves em `90-system/reports/`, `INDEX.md` e propostas em `90-system/review/`.

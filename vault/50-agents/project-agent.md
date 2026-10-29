@@ -12,7 +12,7 @@ Recebes o caminho de um projeto (`10-projects/<projeto>/`). O teu âmbito é **a
 1. Lê `CLAUDE.md`, depois `INDEX.md` e `CONTEXT.md` do projeto. Abre specs e decisões só se forem relevantes.
 2. Trabalha na tarefa recebida.
 3. No fim, usa [[40-skills/log-session/SKILL]] (escrita livre).
-4. Mudanças em `CONTEXT.md`, `INDEX.md`, specs ou decisões: usa [[40-skills/propose-change/SKILL]].
+4. Atualizas `INDEX.md` (estado, próximas ações) diretamente. Mudanças em `CONTEXT.md`, specs ou decisões existentes: usa [[40-skills/propose-change/SKILL]]. Decisões e specs novas cria-as diretamente.
 5. Se o âmbito cresceu (uma parte tem objetivo, stakeholders ou ciclo próprios), propõe um subprojeto com [[40-skills/create-project/SKILL]].
 
 ## Limites

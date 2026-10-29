@@ -23,6 +23,8 @@ tags: []                 # opcional
 - `updated` é obrigatório e atualizado em cada alteração.
 - `owner-agent` identifica quem pode propor alterações sem revisão adicional (ver `50-agents/`).
 - Valores fora desta lista contam como erro para o agente de manutenção.
+- `status: archived` retira o ficheiro: no fim da sessão o hook move-o para `99-archive/`, mantendo o caminho de origem.
+- `status: approved` em propostas só é escrito por humanos.
 
 ## Nomes de ficheiros
 - `kebab-case`, sem acentos, sem espaços.
